@@ -8,11 +8,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 
 
-#read preprocessed data
-data = pd.read_csv('data\\preprocessed_imgs.csv', header=None)
+# #read preprocessed data
+# data = pd.read_csv('data\\preprocessed_imgs.csv', header=None)
 
-X = data.iloc[:, :-1].values
-y = data.iloc[:, -1]
+# X = data.iloc[:, :-1].values
+# y = data.iloc[:, -1]
 
 
 class Classifier:
@@ -73,7 +73,7 @@ class Classifier:
         print('Report: ', clf_rp)
 
 
-clf = Classifier(X, y)
-clf.train_model()
-clf.evaluate()
+# clf = Classifier(X, y)
+# clf.train_model()
+# clf.evaluate()
 
