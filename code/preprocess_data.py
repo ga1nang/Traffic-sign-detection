@@ -3,16 +3,11 @@ import os
 import cv2
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import xml.etree.ElementTree as ET
 import csv
 
 from skimage.transform import resize
 from skimage import feature
-from sklearn.svm import SVC
-from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, classification_report
 
 
 #preprocessing image function hog
