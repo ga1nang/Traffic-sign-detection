@@ -87,10 +87,68 @@ class ObjectDetector:
         # plt.axis('off')
         # plt.show()
         
+    
+    #compute IoU function for NMS calculation
+    def compute_iou(self, bbox, bboxes, bbox_area, bboxes_area):
+        xxmin = np.maximum(bbox[0], bboxes[:, 0])
+        yymin = np.maximum(bbox[1], bboxes[:, 1])
+        xxmax = np.maximum(bbox[2], bboxes[:, 2])
+        yymax = np.maximum(bbox[3], bboxes[:, 3])
         
+        w = np.maximum(0, xxmax - xxmin + 1)
+        h = np.maximum(0, yymax - yymin + 1)
+        
+        intersection = w * h
+        iou = intersection / (bbox_area + bboxes_area - intersection)
+        
+        return iou
+    
+    
+    #compute Non-Maximum Suppression
+    def nms(self, bboxes, iou_threshold):
+        if not bboxes:
+            return []
+        
+        scores = np.array([bbox[5] for bbox in bboxes])
+        sorted_indices = np.argsort(scores)[::-1]
+        
+        xmin = np.array([bbox[0] for bbox in bboxes])
+        ymin = np.array([bbox[1] for bbox in bboxes])
+        xmax = np.array([bbox[2] for bbox in bboxes])
+        ymax = np.array([bbox[3] for bbox in bboxes])
+        
+        areas = (xmax - xmin + 1) * (ymax - ymin + 1)
+        
+        keep = []
+        
+        while sorted_indices.size > 0:
+            i = sorted_indices[0]
+            keep.append(i)
+            
+            iou = self.compute_iou(
+                [xmin[i], ymin[i], xmax[i], ymax[i]],
+                np.array(
+                    [
+                        xmin[sorted_indices[1:]],
+                        ymin[sorted_indices[1:]],
+                        xmax[sorted_indices[1:]],
+                        ymax[sorted_indices[1:]]
+                    ]
+                ).T,
+                areas[i],
+                areas[sorted_indices[1:]]
+            )
+            idx_to_keep = np.where(iou <= iou_threshold)[0]
+            sorted_indices = sorted_indices[idx_to_keep + 1]
+            
+        return [bboxes[i] for i in keep]
+            
+    
+        
+    #detect the object in the image file    
     def detect(self, img_dir):
         img_filename_lst = os.listdir(img_dir)[:20]
-        conf_threshold = 0.85
+        conf_threshold = 0.9
         stride = 12
         window_sizes = [
             (32, 32),
@@ -135,6 +193,8 @@ class ObjectDetector:
                         bboxes.append(
                             [xmin, ymin, xmax, ymax, predict_id, conf_score]
                         )
+                        
+            bboxes = self.nms(bboxes, 0.5)
             self.visualize_bbox(img_filename, img, bboxes, self.clf.label_encoder)
             
             
