@@ -2,7 +2,10 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import cv2
+import os
+import time
 
+from preprocess_data import preprocess_img
 from sklearn.svm import SVC
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
@@ -56,3 +59,77 @@ class ObjectDetector:
             pyramid_images.append((img, acc_scale))
             
         return pyramid_images
+    
+    
+    #visualize_bbox on the image
+    def visualize_bbox(img, bboxes, label_encoder):
+        img = cv2.cvtColor(img, cv2.BGR2RGB)
+        
+        for box in bboxes:
+            xmin, ymin, xmax, ymax, predict_id, conf_score = box
+            
+            cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
+            
+            classname = label_encoder.inverse_transform([predict_id])[0]
+            label = f"{classname} {conf_score}"
+            
+            (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)
+            
+            cv2.rectangle(img, (xmin, ymin - 20), (xmin + w, ymin), (0, 255, 0), -1)
+            
+            cv2.putText(img, label, (xmin, ymin - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 1)
+            
+            
+        plt.imshow(img)
+        plt.axis('off')
+        plt.show()
+        
+        
+    def detect(self, img_dir):
+        img_filename_lst = os.listdir(img_dir)[:20]
+        conf_threshold = 0.8
+        stride = 12
+        window_sizes = [
+            (32, 32),
+            (64, 64),
+            (128, 128)
+        ]
+        
+        #iterate through each images in the directory
+        for img_filename in img_filename_lst:
+            start_time = time.time()
+            img_filepath = os.path.join(img_dir, img_filename)
+            bboxes = []
+            img = cv2.imread(img_filepath)
+            pyramid_imgs = self.pyramid(img)
+            
+            #iterate each images in pyramid and run sliding windows
+            for pyramid_img_info  in pyramid_imgs:
+                pyramid_img, scale_factor = pyramid_img_info
+                window_lst = self.sliding_window(
+                    pyramid_img,
+                    window_sizes=window_sizes,
+                    stride=stride,
+                    scale_factor=scale_factor
+                )
+                
+                #iterate each sliding windows and 
+                for window in window_lst:
+                    xmin, ymin, xmax, ymax = window
+                    object_img = pyramid_img[ymin:ymax, xmin:xmax]
+                    preprocessed_img = preprocess_img(object_img)
+                    normalized_img = self.clf.scaler.transform([preprocessed_img])[0]
+                    decision = self.clf.model.predict_proba([normalized_img])[0]
+                    
+                    if np.all(decision < conf_threshold):
+                        continue
+                    else:
+                        predict_id = np.argmax(decision)
+                        conf_score = decision[predict_id]
+                        xmin = int(xmin / scale_factor)
+                        ymin = int(ymin / scale_factor)
+                        xmax = int(xmax / scale_factor)
+                        ymax = int(ymax / scale_factor)
+                        bboxes.append(
+                            [xmin, ymin, xmax, ymax, predict_id, conf_score]
+                        )

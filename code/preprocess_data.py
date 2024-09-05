@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import xml.etree.ElementTree as ET
 import csv
+import sys
 
 from skimage.transform import resize
 from skimage import feature
@@ -33,6 +34,9 @@ def preprocess_img(img):
     )
     
     return hog_feature
+
+#export preprocess_img function
+sys.modules[__name__] = preprocess_img
 
 '''read data from the .xml file and .png file'''
 annotations_dir = 'data\\annotations'
@@ -80,3 +84,4 @@ img_features = np.array(img_features_lst)
 df = pd.DataFrame(img_features)
 df['label'] = label_lst
 df.to_csv('data\\preprocessed_imgs.csv', header=None)
+
