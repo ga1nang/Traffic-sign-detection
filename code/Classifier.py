@@ -11,8 +11,8 @@ from sklearn.metrics import accuracy_score, classification_report
 # #read preprocessed data
 # data = pd.read_csv('data\\preprocessed_imgs.csv', header=None)
 
-# X = data.iloc[:, :-1].values
-# y = data.iloc[:, -1]
+# X = data.iloc[1:, 1:-1].values
+# y = data.iloc[1:, -1]
 
 
 class Classifier:
@@ -27,8 +27,8 @@ class Classifier:
 
     #Encoded Label from string to int
     def enconded_label(self):
-        label_encoder = LabelEncoder()
-        self.encoded_y = label_encoder.fit_transform(self.y)
+        self.label_encoder = LabelEncoder()
+        self.encoded_y = self.label_encoder.fit_transform(self.y)
     
     
     #split train test data

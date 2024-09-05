@@ -16,8 +16,8 @@ from Classifier import Classifier
 #read preprocessed data
 data = pd.read_csv('data\\preprocessed_imgs.csv', header=None)
 
-X = data.iloc[:, :-1].values
-y = data.iloc[:, -1]
+X = data.iloc[1:, 1:-1].values
+y = data.iloc[1:, -1]
 
 
 class ObjectDetector:
@@ -25,10 +25,11 @@ class ObjectDetector:
         self.X = X
         self.y = y
         self.clf = Classifier(self.X, self.y)
+        self.clf.train_model()
         
         
     #sliding windows which slide through every pixel in the images
-    def sliding_window(img, window_sizes, stride):
+    def sliding_window(self, img, window_sizes, stride):
         img_height, img_width = img.shape[:2]
         windows = []
         for window_size in window_sizes:
@@ -44,7 +45,7 @@ class ObjectDetector:
     
     
     #Pyramid Image technique to find small objects
-    def pyramid(img, scale=0.8, min_size=(30, 30)):
+    def pyramid(self, img, scale=0.8, min_size=(30, 30)):
         acc_scale = 1.0
         pyramid_images = [(img, acc_scale)]
         
@@ -62,8 +63,8 @@ class ObjectDetector:
     
     
     #visualize_bbox on the image
-    def visualize_bbox(img, bboxes, label_encoder):
-        img = cv2.cvtColor(img, cv2.BGR2RGB)
+    def visualize_bbox(self,img_filename, img, bboxes, label_encoder):
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         
         for box in bboxes:
             xmin, ymin, xmax, ymax, predict_id, conf_score = box
@@ -79,15 +80,17 @@ class ObjectDetector:
             
             cv2.putText(img, label, (xmin, ymin - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 1)
             
-            
-        plt.imshow(img)
-        plt.axis('off')
-        plt.show()
+        img_bgr = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        cv2.imwrite('data\\detect\\result\\' + img_filename, img_bgr)
+        print(img_filename)
+        # plt.imshow(img)
+        # plt.axis('off')
+        # plt.show()
         
         
     def detect(self, img_dir):
         img_filename_lst = os.listdir(img_dir)[:20]
-        conf_threshold = 0.8
+        conf_threshold = 0.85
         stride = 12
         window_sizes = [
             (32, 32),
@@ -109,8 +112,7 @@ class ObjectDetector:
                 window_lst = self.sliding_window(
                     pyramid_img,
                     window_sizes=window_sizes,
-                    stride=stride,
-                    scale_factor=scale_factor
+                    stride=stride
                 )
                 
                 #iterate each sliding windows and 
@@ -133,3 +135,8 @@ class ObjectDetector:
                         bboxes.append(
                             [xmin, ymin, xmax, ymax, predict_id, conf_score]
                         )
+            self.visualize_bbox(img_filename, img, bboxes, self.clf.label_encoder)
+            
+            
+detectObj = ObjectDetector(X, y)
+detectObj.detect('data\\detect\\images_to_detect')

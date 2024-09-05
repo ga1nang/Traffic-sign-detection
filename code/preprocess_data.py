@@ -35,8 +35,8 @@ def preprocess_img(img):
     
     return hog_feature
 
-#export preprocess_img function
-sys.modules[__name__] = preprocess_img
+# #export preprocess_img function
+# sys.modules[__name__] = preprocess_img
 
 '''read data from the .xml file and .png file'''
 annotations_dir = 'data\\annotations'
@@ -83,5 +83,5 @@ img_features = np.array(img_features_lst)
 #write data to a seperate file   
 df = pd.DataFrame(img_features)
 df['label'] = label_lst
-df.to_csv('data\\preprocessed_imgs.csv', header=None)
+df.to_csv('data\\preprocessed_imgs.csv')
 
